@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NFL Game Ranker</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏀</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏈</text></svg>"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -191,7 +191,7 @@ input:checked+.tog-track::after{transform:translateX(14px)}
 <header class="site-header">
   <div>
     <div class="site-title">NFL GAME RANKER</div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:3px;letter-spacing:.3px">v1.0 · nfl · built 2025-05-07</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:3px;letter-spacing:.3px">v1.1 · nfl · built 2025-05-07</div>
   </div>
   <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);text-align:right;line-height:1.6">find the perfect matchups<br/>powered by your picks</div>
 </header>
@@ -397,8 +397,6 @@ input:checked+.tog-track::after{transform:translateX(14px)}
         </div>
       </div>
 
-      <!-- CHART -->
-
     </div>
   </div>
 </div>
@@ -538,13 +536,7 @@ function confirmReset(){
 
 function rankByRecord(){
   document.getElementById('saved-note').textContent='fetching standings...';
-  // ESPN standings API uses different abbreviations than scoreboard API.
-  // Map ESPN standings abbr → our TEAMS abbr
-  var ESPN_ABBR_MAP={
-    'NO':'NOP','GS':'GSW','SA':'SAS','NY':'NYK','UTAH':'UTA',
-    'WSH':'WAS','BKN':'BKN','CHA':'CHA','MEM':'MEM','OKC':'OKC',
-    'PHX':'PHX','PHI':'PHI','NOP':'NOP'
-  };
+  var ESPN_ABBR_MAP={'WSH':'WAS'};
   function normalizeAbbr(abbr){return ESPN_ABBR_MAP[abbr]||abbr;}
   fetch('https://site.api.espn.com/apis/v2/sports/football/nfl/standings')
     .then(function(r){if(!r.ok)throw new Error('bad');return r.json();})
@@ -568,7 +560,7 @@ function rankByRecord(){
       }
       entries.sort(function(a,b){
         if(b.pct!==a.pct)return b.pct-a.pct;
-        return b.wins-a.wins; // tiebreak by wins
+        return b.wins-a.wins;
       });
       var n=entries.length;
       entries.forEach(function(e,idx){
@@ -665,7 +657,7 @@ function toHr(t){var p=(t||'00:00').split(':');return+p[0]+(+p[1]/60);}
 var bcastVal='all',dayVal='all';
 var enabledNets={CBS:true,Fox:true,NBC:true,ESPN:true,'Prime Video':true,'NFL Network':true,Peacock:true};
 var enabledDows={0:true,1:true,2:true,3:true,4:true,5:true,6:true};
-var dateMode='single'; // 'single' or 'range'
+var dateMode='single';
 
 function setDateMode(mode){
   dateMode=mode;
@@ -673,14 +665,11 @@ function setDateMode(mode){
   document.getElementById('mode-range').classList.toggle('on',mode==='range');
   document.getElementById('single-date-row').style.display=mode==='single'?'flex':'none';
   document.getElementById('range-date-row').style.display=mode==='range'?'flex':'none';
-  // sync hidden w-range-on state
-  document.getElementById('w-range-on')?document.getElementById('w-range-on').checked=(mode==='range'):null;
 }
-function setBcast(v){} // no-op in NFL
+function setBcast(v){}
 function setDay(v){
   dayVal=v;
   document.querySelectorAll('#day-filter .pill').forEach(function(el){el.classList.toggle('on',el.dataset.val===v);});
-  // Sync individual dow pills to match selection
   if(v==='all'){Object.keys(enabledDows).forEach(function(d){enabledDows[d]=true;});}
   else if(v==='weekday'){Object.keys(enabledDows).forEach(function(d){enabledDows[d]=(+d>=0&&+d<=4);});}
   else if(v==='weekend'){Object.keys(enabledDows).forEach(function(d){enabledDows[d]=(+d===5||+d===6||+d===0);});}
@@ -689,7 +678,6 @@ function setDay(v){
 function toggleNet(el){var n=el.dataset.net;enabledNets[n]=!enabledNets[n];el.classList.toggle('on',enabledNets[n]);}
 function toggleDow(el){
   var d=+el.dataset.dow;enabledDows[d]=!enabledDows[d];el.classList.toggle('on',enabledDows[d]);
-  // Update day pill to reflect custom state
   var allOn=Object.values(enabledDows).every(Boolean);
   var wdOn=[0,1,2,3,4].every(function(i){return enabledDows[i];})&&!enabledDows[5]&&!enabledDows[6];
   var weOn=(enabledDows[5]||enabledDows[6]||enabledDows[0])&&![1,2,3,4].some(function(i){return enabledDows[i];});
@@ -700,7 +688,6 @@ function toggleDow(el){
 function collapseBody(id,on){
   var el=document.getElementById(id);if(!el)return;
   el.classList.toggle('collapsed',!on);
-  // Remove fs-head bottom margin when collapsed so section is tight
   var head=el.previousElementSibling;
   if(head&&head.classList.contains('fs-head')){
     head.style.marginBottom=on?'8px':'0';
@@ -711,8 +698,6 @@ function updateStates(){
   collapseBody('dt-body',dtOn);
   var timeOn=document.getElementById('w-time-on').checked;
   document.getElementById('time-nest').classList.toggle('off',!timeOn);
-  // broadcast always visible in NFL (no on/off toggle)
-  // no leverage section in NFL
   var starsOn=document.getElementById('w-stars-on').checked;
   collapseBody('stars-nest',starsOn);
   var teamOn=document.getElementById('w-team-on').checked;
@@ -726,15 +711,13 @@ function resetFilters(){
   document.getElementById('w-time-on').checked=false;
   document.getElementById('w-min-time').value='00:00';
   document.getElementById('w-max-time').value='23:59';
-
-
   document.getElementById('w-stars-on').checked=true;
   setStarPicker('stars-min-picker',1);
   setStarPicker('stars-max-picker',5);
   setDotPicker('dots-min-picker',1);
   setDotPicker('dots-max-picker',5);
   includeTeams=[];excludeTeams=[];renderTeamBubbles();
-setDay('all');
+  setDay('all');
   Object.keys(enabledNets).forEach(function(k){enabledNets[k]=true;});
   document.querySelectorAll('#network-pills .net-pill').forEach(function(el){el.classList.add('on');});
   updateStates();
@@ -754,8 +737,6 @@ function getFilterState(){
     timeOn:document.getElementById('w-time-on').checked,
     minTime:document.getElementById('w-min-time').value,
     maxTime:document.getElementById('w-max-time').value,
-
-
     starsOn:document.getElementById('w-stars-on').checked,
     starsMin:document.getElementById('stars-min-picker').dataset.val,
     starsMax:document.getElementById('stars-max-picker').dataset.val,
@@ -770,8 +751,6 @@ function applyFilterState(s){
   document.getElementById('w-time-on').checked=s.timeOn;
   document.getElementById('w-min-time').value=s.minTime||'00:00';
   document.getElementById('w-max-time').value=s.maxTime||'23:59';
-
-
   document.getElementById('w-stars-on').checked=!!s.starsOn;
   setStarPicker('stars-min-picker',+(s.starsMin||1));
   setStarPicker('stars-max-picker',+(s.starsMax||5));
@@ -781,7 +760,6 @@ function applyFilterState(s){
   enabledNets=Object.assign({},s.enabledNets||enabledNets);
   enabledDows=Object.assign({},s.enabledDows||enabledDows);
   setBcast(s.bcastVal||'all');
-  // Restore dow pills
   document.querySelectorAll('#dow-pills .net-pill').forEach(function(el){el.classList.toggle('on',enabledDows[+el.dataset.dow]!==false);});
   document.querySelectorAll('#network-pills .net-pill').forEach(function(el){el.classList.toggle('on',enabledNets[el.dataset.net]!==false);});
   dayVal=s.dayVal||'all';
@@ -817,14 +795,11 @@ function renderFilterProfiles(){
 // ── GAME PROCESSING ─────────────────────────────────
 var lastGames=[];
 function getTeamData(name){
-  for(var i=0;i<TEAMS.length;i++){var t=TEAMS[i];if(name===t.name||name.includes(t.name.split(' ').pop()))return{elo:ratings[t.abbr]||1200,abbr:t.abbr,espn:t.espn};}
-  return{elo:1200,abbr:name.substring(0,3).toUpperCase(),espn:''};
+  for(var i=0;i<TEAMS.length;i++){var t=TEAMS[i];if(name===t.name||name.includes(t.name.split(' ').pop()))return{elo:ratings[t.abbr]||1200,abbr:t.abbr,espn:t.espn,div:t.div};}
+  return{elo:1200,abbr:name.substring(0,3).toUpperCase(),espn:'',div:''};
 }
-// Series score cache: keyed by sorted-team-pair + date
-function makeGcalUrl(utc,awayName,homeName,watch,lev,levLbl,tvBonus,gameNum,rawAW,rawHW,hd,ad){
-  // Build Google Calendar "add event" URL
+function makeGcalUrl(utc,awayName,homeName,watch,lev,levLbl,hd,ad){
   var title=encodeURIComponent((hd&&ad)?(ad.abbr+' @ '+hd.abbr):(awayName+' @ '+homeName));
-  // Start: game time UTC, End: +2.5 hours (typical NBA game)
   function pad2(n){return String(n).padStart(2,'0');}
   var s=new Date(utc);
   var e=new Date(utc.getTime()+3.5*3600000);
@@ -834,9 +809,8 @@ function makeGcalUrl(utc,awayName,homeName,watch,lev,levLbl,tvBonus,gameNum,rawA
   }
   var dates=gfmt(s)+'/'+gfmt(e);
   var details='';
-  if(gameNum)details+='Game '+gameNum;
-  if(watch&&watch!=='League Pass')details+=' | '+watch;
-  if(lev>0&&levLbl)details+=' | +'+lev+' '+levLbl;
+  if(watch&&watch!=='League Pass')details+=watch;
+  if(lev>0&&levLbl)details+=(details?' | ':'')+'+'+lev+' '+levLbl;
   return 'https://calendar.google.com/calendar/render?action=TEMPLATE'+
     '&text='+title+'&dates='+dates+'&details='+encodeURIComponent(details);
 }
@@ -846,7 +820,7 @@ function processEvent(ev,tz){
   var home=comp.competitors[0],away=comp.competitors[1];
   var hd=getTeamData(home.team.displayName),ad=getTeamData(away.team.displayName);
   var combined=hd.elo+ad.elo,utc=new Date(ev.date);
-  var watch='League Pass',isNat=false,watchTBD=false;
+  var watch='League Pass',isNat=false;
   var hasBroadcast=comp.broadcasts&&comp.broadcasts.length&&comp.broadcasts[0].names&&comp.broadcasts[0].names.length;
   if(hasBroadcast){
     var ns=comp.broadcasts[0].names||[];
@@ -855,48 +829,21 @@ function processEvent(ev,tz){
       if(['CBS','Fox','NBC','ESPN','ESPN2','Prime Video','NFL Network','Peacock','ABC'].indexOf(n)>=0){watch=n;isNat=true;break;}
     }
   }
-  // Playoff games with no broadcast assigned yet — show TBD not League Pass
-  // NFL: no series, just leave League Pass as-is
-  var watchTBD=false;
 
-  // ── SERIES SCORE ──────────────────────────────────
-  // Approach: read wins directly from ESPN series data, keyed by team id.
-  // ESPN always reports current cumulative wins, so for scheduled games these
-  // are the pre-game wins. For completed/in-progress games they include tonight,
-  // so we subtract 1 from the winner.
-  // We store awayWins-homeWins in a fixed format tied to ESPN competitor order,
-  // which is consistent per matchup regardless of home/away display.
-  var levOn=true; // NFL: bonuses always applied
   var lev=0,levLbl='';
-  var gameNum=null,awaySerWins=null,homeSerWins=null;
 
-  // NFL bonus logic: primetime, divisional, playoff
-  var rawAW=null,rawHW=null;
-  if(levOn){
-    // Primetime: SNF/MNF/TNF
-    var primetimeNets=['NBC','ESPN','ESPN2','Amazon Prime','Prime Video','NFL Network'];
-    if(isNat&&primetimeNets.indexOf(watch)>=0){
-      lev+=300;levLbl='primetime';
-    }
-    // Divisional: check if both teams share a division
-    if(hd&&ad&&hd.div&&ad.div&&hd.div===ad.div){
-      lev+=200;
-      levLbl=levLbl?levLbl+' + divisional':'divisional';
-    }
-    // Playoff: check for postseason notes
-    var isPlayoff=false;
-    if(comp.notes&&comp.notes.length){
-      var hn=(comp.notes[0].headline||'').toLowerCase();
-      if(hn.indexOf('wild card')>=0||hn.indexOf('divisional')>=0||hn.indexOf('championship')>=0||hn.indexOf('super bowl')>=0)isPlayoff=true;
-    }
-    if(isPlayoff){
-      lev+=400;
-      levLbl=levLbl?levLbl+' + playoff':'playoff';
-    }
+  // Primetime bonus: SNF (NBC), MNF (ESPN), TNF (Prime Video / NFL Network)
+  var primetimeNets=['NBC','ESPN','ESPN2','Prime Video','NFL Network'];
+  if(isNat&&primetimeNets.indexOf(watch)>=0){
+    lev+=300;levLbl='primetime';
+  }
+  // Divisional matchup bonus
+  if(hd&&ad&&hd.div&&ad.div&&hd.div===ad.div){
+    lev+=200;
+    levLbl=levLbl?levLbl+' + divisional':'divisional';
   }
 
-  var tvBonus=0;
-  var total=combined+lev+tvBonus;
+  var total=combined+lev;
   return{
     homeAbbr:hd.abbr,awayAbbr:ad.abbr,homeEspn:hd.espn,awayEspn:ad.espn,
     homeLogo:home.team.logo,awayLogo:away.team.logo,
@@ -905,19 +852,16 @@ function processEvent(ev,tz){
     totalStars:gameStars(total),flame:total>CMAX,
     time:fmtTime(utc,tz),hr:gameHr(utc,tz),dow:utc.getDay(),
     dateLabel:fmtDateShort(utc),utcMs:utc.getTime(),
-    watch:watch,isNat:isNat,watchTBD:watchTBD,lev:lev,levLbl:levLbl,tvBonus:tvBonus,
-    gameNum:null,awaySerWins:null,homeSerWins:null,
-
-    gcalUrl:makeGcalUrl(utc,away.team.displayName,home.team.displayName,watch,lev,levLbl,tvBonus,gameNum,rawAW,rawHW,hd,ad),
+    watch:watch,isNat:isNat,lev:lev,levLbl:levLbl,
+    gcalUrl:makeGcalUrl(utc,away.team.displayName,home.team.displayName,watch,lev,levLbl,hd,ad),
     total:total,score:total+Math.random()*10
   };
 }
 function applyFilters(games){
   if(includeTeams.length>0)games=games.filter(function(g){return includeTeams.indexOf(g.homeAbbr)>=0||includeTeams.indexOf(g.awayAbbr)>=0;});
   if(excludeTeams.length>0)games=games.filter(function(g){return excludeTeams.indexOf(g.homeAbbr)<0&&excludeTeams.indexOf(g.awayAbbr)<0;});
-  // NFL: filter by enabled networks only (no league pass concept)
   games=games.filter(function(g){
-    if(!g.isNat)return true; // local/unassigned games always shown
+    if(!g.isNat)return true;
     return enabledNets[g.watch]!==false;
   });
   var dtOn=document.getElementById('w-dt-on').checked;
@@ -933,8 +877,6 @@ function applyFilters(games){
     var minS=+document.getElementById('stars-min-picker').dataset.val||1;
     var maxS=+document.getElementById('stars-max-picker').dataset.val||5;
     games=games.filter(function(g){return g.totalStars>=minS&&g.totalStars<=maxS;});
-    // Team dot filter: both home and away must have at least minD dots,
-    // and the higher of the two must be within maxD
     var minD=+document.getElementById('dots-min-picker').dataset.val||1;
     var maxD=+document.getElementById('dots-max-picker').dataset.val||5;
     games=games.filter(function(g){
@@ -947,14 +889,9 @@ function applyFilters(games){
 }
 
 function sortGames(games){
-  var now=Date.now();
   games.sort(function(a,b){
-    // Compare scores rounded to integer (strip random tiebreaker noise)
-    var sa=Math.round(a.score-a.score%1),sb=Math.round(b.score-b.score%1);
-    // Use actual score without random component for tie comparison
     var realA=a.total,realB=b.total;
     if(realB!==realA)return realB-realA;
-    // Genuine tie: sort by soonest game date (closest to now)
     return (a.utcMs||0)-(b.utcMs||0);
   });
   return games;
@@ -965,16 +902,13 @@ function renderCards(games,showDate){
   el.innerHTML=games.map(function(g,i){
     var rank=i+1;
     var rc=rank===1?'#BA7517':rank===2?'#888780':rank===3?'#854F0B':'var(--text-3)';
-    var badge=g.watchTBD?'<span class="g-badge badge-lp">TBD</span>':g.isNat?'<span class="g-badge badge-tv">'+g.watch+'</span>':'<span class="g-badge badge-lp">League Pass</span>';
+    var badge=g.isNat?'<span class="g-badge badge-tv">'+g.watch+'</span>':'<span class="g-badge badge-lp">League Pass</span>';
     var bonuses='';
     if(g.lev>0)bonuses+='<div class="g-bonuses">+'+g.lev+' '+g.levLbl+'</div>';
-
     var dateTimeLine=
       '<div style="font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text);text-align:center;margin:2px 0">'+g.dateLabel+'</div>'+
       '<div style="font-size:10px;color:var(--text-3);font-family:var(--mono);text-align:center;letter-spacing:.5px;margin:1px 0">at</div>'+
       '<div style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);text-align:center;margin:2px 0">'+g.time+'</div>';
-    // Series info block
-    var seriesBlock=''; // NFL: no series scores
     return'<div class="game-card">'+
       '<div class="game-card-header">'+
         '<span class="rank-dot" style="background:'+g.dotColor+'"></span>'+
@@ -1008,7 +942,6 @@ function loadSingle(){
   var el=document.getElementById('games-content');
   el.innerHTML='<div class="loading">loading...</div>';
   document.getElementById('games-note').textContent='';
-  
   fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates='+dstr(currentDate))
     .then(function(r){return r.json();})
     .then(function(data){
@@ -1021,7 +954,6 @@ function loadSingle(){
       games.forEach(function(g,i){g.dotColor=DOT_COLORS[i%DOT_COLORS.length];});
       lastGames=games;renderCards(games,false);
       document.getElementById('games-note').textContent=games.length+' game'+(games.length!==1?'s':'')+' · ranked by elo';
-      // chart now in matchup map tab
     })
     .catch(function(){el.innerHTML='<div class="no-games">couldn\'t load games</div>';});
 }
@@ -1038,7 +970,6 @@ function loadRange(){
   var el=document.getElementById('games-content');
   el.innerHTML='<div class="loading">fetching '+days+' days...</div>';
   document.getElementById('games-note').textContent='';
-  
   var all=[],dates=[];
   for(var d=new Date(from);d<=to;d.setDate(d.getDate()+1))dates.push(dstr(new Date(d)));
   function next(i){
@@ -1057,116 +988,6 @@ function loadRange(){
       .catch(function(){next(i+1);});
   }
   next(0);
-}
-
-// ── CHART ───────────────────────────────────────────
-var scatterInst=null;
-function buildChart(games){
-  var wrap=document.getElementById('chart-wrap');
-  if(scatterInst){scatterInst.destroy();scatterInst=null;}
-  if(!games||!games.length){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  // Legend
-  document.getElementById('chart-legend').innerHTML=games.map(function(g,i){
-    return'<div class="leg-item"><span class="leg-dot" style="background:'+g.dotColor+'"></span>'+(i+1)+'. '+g.awayAbbr+' @ '+g.homeAbbr+'</div>';
-  }).join('');
-  var AMIN=800,AMAX=1550,MED=1200,RMIN=1920,RMAX=2931,RR=RMAX-RMIN;
-  var qb=[RMIN+RR*0.2,RMIN+RR*0.4,RMIN+RR*0.6,RMIN+RR*0.8];
-  function lpts(S){
-    // Find where the diagonal line y=S-x intersects the chart bounds
-    // Clip to [AMIN, CHART_MAX] on both axes
-    var LO=AMIN,HI=CHART_MAX;
-    var pts=[];
-    // intersection with y=LO: x=S-LO
-    var xAtYlo=S-LO; if(xAtYlo>=LO&&xAtYlo<=HI)pts.push({x:xAtYlo,y:LO});
-    // intersection with y=HI: x=S-HI
-    var xAtYhi=S-HI; if(xAtYhi>=LO&&xAtYhi<=HI)pts.push({x:xAtYhi,y:HI});
-    // intersection with x=LO: y=S-LO
-    var yAtXlo=S-LO; if(yAtXlo>=LO&&yAtXlo<=HI)pts.push({x:LO,y:yAtXlo});
-    // intersection with x=HI: y=S-HI
-    var yAtXhi=S-HI; if(yAtXhi>=LO&&yAtXhi<=HI)pts.push({x:HI,y:yAtXhi});
-    // Deduplicate and sort by x
-    var seen={};var uniq=[];
-    pts.forEach(function(p){var k=p.x+','+p.y;if(!seen[k]){seen[k]=1;uniq.push(p);}});
-    uniq.sort(function(a,b){return a.x-b.x;});return uniq;
-  }
-  function lds(pts,c,d,w){return{type:'scatter',data:pts,borderColor:c,backgroundColor:'transparent',pointRadius:0,pointHoverRadius:0,showLine:true,borderDash:d,borderWidth:w,label:'_'};}
-  var dots=games.map(function(g){
-    return{type:'scatter',data:[{x:g.awayElo,y:g.homeElo}],
-      backgroundColor:g.dotColor,borderColor:g.dotColor,pointBackgroundColor:g.dotColor,pointBorderColor:g.dotColor,
-      pointRadius:10,pointHoverRadius:13,showLine:false,label:'_'};
-  });
-  // Flame threshold line (top-right corner, red dashed)
-  var CHART_MAX=1700;
-  var flameLine=lds(lpts(RMAX),'rgba(163,45,45,0.8)',[6,3],2);
-
-  // Bonus arrows: start from the game's dot, extend along y=x by bonus amount
-  // Each arrow is its own dataset so tooltip can show bonus label
-  var arrowDatasets=[];
-  var arrowLabels=[];
-  games.forEach(function(g,gi){
-    var bonus=(g.lev||0)+(g.tvBonus||0);
-    if(!bonus)return;
-    // Start: game's actual position (awayElo, homeElo)
-    var sx=g.awayElo,sy=g.homeElo;
-    // Direction along y=x: add bonus/2 to each axis
-    var delta=bonus/2;
-    var ex=Math.min(sx+delta,CHART_MAX-10);
-    var ey=Math.min(sy+delta,CHART_MAX-10);
-    var bonusLabel=(bonus>0?'+':'')+bonus+' '+g.levLbl+(g.tvBonus?' + '+g.tvBonus+' tv':'');
-    arrowDatasets.push({
-      type:'scatter',
-      data:[{x:sx,y:sy},{x:ex,y:ey}],
-      borderColor:'rgba(163,45,45,0.75)',
-      backgroundColor:'transparent',
-      pointRadius:[0,6],
-      pointBackgroundColor:['transparent','rgba(163,45,45,0.85)'],
-      pointBorderColor:['transparent','rgba(163,45,45,0.85)'],
-      showLine:true,borderWidth:1.5,
-      label:'bonus:'+gi // encode game index for tooltip
-    });
-    arrowLabels.push({gameIdx:gi,label:bonusLabel});
-  });
-
-  var lines=[
-    lds([{x:AMIN,y:AMIN},{x:CHART_MAX,y:CHART_MAX}],'rgba(100,100,100,0.75)',[7,4],2),
-    lds([{x:MED,y:AMIN},{x:MED,y:CHART_MAX}],'rgba(100,100,100,0.55)',[4,4],1.5),
-    lds([{x:AMIN,y:MED},{x:CHART_MAX,y:MED}],'rgba(100,100,100,0.55)',[4,4],1.5),
-    flameLine,
-  ].concat(qb.map(function(S){return lds(lpts(S),'rgba(186,117,23,0.65)',[4,3],1.5);}))
-   .concat(arrowDatasets);
-
-  // Use responsive:true with aspectRatio:1 for correct hover hit detection
-  var cvs=document.getElementById('scatter-canvas');
-  cvs.style.width='100%';cvs.style.height='';
-  scatterInst=new Chart(cvs,{
-    type:'scatter',data:{datasets:dots.concat(lines)},
-    options:{
-      responsive:true,
-      aspectRatio:1.09,
-      plugins:{legend:{display:false},tooltip:{
-        enabled:true,
-        callbacks:{label:function(c){
-          var lbl=c.dataset.label||'';
-          if(lbl.indexOf('bonus:')===0){
-            var gi=+lbl.replace('bonus:','');
-            var al=arrowLabels.find(function(a){return a.gameIdx===gi;});
-            return al?al.label:'bonus';
-          }
-          var g=games[c.datasetIndex];
-          if(!g)return'';
-          return [g.awayAbbr+' @ '+g.homeAbbr,g.dateLabel+' · '+g.time,g.watch,'combined elo: '+(g.awayElo+g.homeElo)];
-        }}}},
-      scales:{
-        x:{type:'linear',min:AMIN,max:CHART_MAX,
-          title:{display:true,text:'away elo',color:'#888780',font:{size:13}},
-          grid:{color:'rgba(180,178,169,0.35)'},ticks:{color:'#888780',font:{size:12},maxTicksLimit:7}},
-        y:{type:'linear',min:AMIN,max:CHART_MAX,
-          title:{display:true,text:'home elo',color:'#888780',font:{size:13}},
-          grid:{color:'rgba(180,178,169,0.35)'},ticks:{color:'#888780',font:{size:12},maxTicksLimit:7}}
-      }
-    }
-  });
 }
 
 // ── RATINGS PROFILES ─────────────────────────────────
@@ -1234,7 +1055,6 @@ function switchTab(tab){
   if(tab==='map')buildMapChart();
 }
 
-
 function buildMapChart(){
   if(mapChartInst){mapChartInst.destroy();mapChartInst=null;}
   document.getElementById('map-nogames').style.display=lastGames.length?'none':'block';
@@ -1262,10 +1082,10 @@ function buildMapChart(){
   });
   var arrowDatasets=[],arrowLabels=[];
   lastGames.forEach(function(g,gi){
-    var bonus=(g.lev||0)+(g.tvBonus||0);if(!bonus)return;
+    var bonus=g.lev||0;if(!bonus)return;
     var delta=bonus/2;
     var ex=Math.min(g.awayElo+delta,CHART_MAX-10),ey=Math.min(g.homeElo+delta,CHART_MAX-10);
-    var bonusLabel=(bonus>0?'+':'')+bonus+' '+g.levLbl+(g.tvBonus?' + '+g.tvBonus+' tv':'');
+    var bonusLabel='+'+bonus+' '+g.levLbl;
     arrowDatasets.push({type:'scatter',data:[{x:g.awayElo,y:g.homeElo},{x:ex,y:ey}],
       borderColor:'rgba(163,45,45,0.75)',backgroundColor:'transparent',
       pointRadius:[0,7],pointBackgroundColor:['transparent','rgba(163,45,45,0.85)'],
@@ -1289,15 +1109,9 @@ function buildMapChart(){
         var lbl=c.dataset.label||'';
         if(lbl.indexOf('bonus:')===0){var gi=+lbl.replace('bonus:','');var al=arrowLabels.find(function(a){return a.gameIdx===gi;});return al?al.label:'bonus';}
         if(!lbl||lbl==='_')return'';
-        // lbl is "N. AWAY @ HOME" — find game by index
         var gi=c.datasetIndex;var g=lastGames[gi];
         if(!g)return lbl;
-        return [
-          g.awayAbbr+' @ '+g.homeAbbr,
-          g.dateLabel+' · '+g.time,
-          g.watch,
-          'combined elo: '+(g.awayElo+g.homeElo)
-        ];
+        return [g.awayAbbr+' @ '+g.homeAbbr,g.dateLabel+' · '+g.time,g.watch,'combined elo: '+(g.awayElo+g.homeElo)];
       }}}},
       scales:{
         x:{type:'linear',min:AMIN,max:CHART_MAX,title:{display:true,text:'away elo',color:'#888780',font:{size:14,family:'DM Mono, monospace'}},grid:{color:'rgba(180,178,169,0.4)'},ticks:{color:'#888780',font:{size:13,family:'DM Mono, monospace'},maxTicksLimit:8}},
@@ -1312,7 +1126,6 @@ function buildMapChart(){
 
 // ── INIT ────────────────────────────────────────────
 initRatings();initRound();render();
-// Star/dot picker wiring
 initPicker('stars-min-picker','data-s',setStarPicker);
 initPicker('stars-max-picker','data-s',setStarPicker);
 initPicker('dots-min-picker','data-d',setDotPicker);
@@ -1323,7 +1136,6 @@ setDotPicker('dots-min-picker',1);
 setDotPicker('dots-max-picker',5);
 ratingProfiles=loadRatingProfiles();renderRatingProfiles();
 filterProfiles=loadFilterProfiles();renderFilterProfiles();
-// Team filter: include/exclude multi-select with bubbles
 var includeTeams=[],excludeTeams=[];
 function populateTeamDropdowns(){
   ['team-include','team-exclude'].forEach(function(id){
@@ -1360,9 +1172,7 @@ function renderTeamBubbles(){
 populateTeamDropdowns();
 document.getElementById('date-picker').value=ival(currentDate);
 loadSingle();
-// Default: date/time ON with today
 document.getElementById('w-dt-on').checked=true;
-// Pre-fill range dates
 (function(){
   var t=new Date(),n=new Date();n.setDate(t.getDate()+6);
   document.getElementById('w-from').value=ival(t);
